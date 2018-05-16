@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "json-rules-engine": "^2.3.0"
+    "json-rules-engine": "^2.3.0",
+    "readline-sync": "^1.4.9"
   }
 }

@@ -1,25 +1,11 @@
 let RuleEngine = require('json-rules-engine');
-let engine = new RuleEngine.Engine();
-/*
-const readline = require('readline');
-readline.emitKeypressEvents(process.stdin);
-process.stdin.setRawMode(true);
-process.stdin.on('keypress', (str, key) => {
-  if (key.ctrl && key.name === 'c') {
-    process.exit();
-  } else {
-    console.log(`You pressed the "${str}" key`);
-    console.log();
-    console.log(key);
-    console.log();
-  }
-});
-console.log('Press any key...');
-*/
+let readlineSync = require('readline-sync');
 
-//---------------------------
+let engine = new RuleEngine.Engine();
+
+//------------------------------------------------------------------
 // Question rules
-//---------------------------
+//------------------------------------------------------------------
 engine.addRule( new RuleEngine.Rule({
     conditions: { 
         all: [
@@ -28,56 +14,105 @@ engine.addRule( new RuleEngine.Rule({
     },
     event: {
         type: 'question', params: { value: 'q1' }
-    }
+    },
+    priority: 3
 }));
-/*
+//------------------------------------------------------------------
 engine.addRule( new RuleEngine.Rule({
     conditions: { 
         all: [
-            { fact: 'q1', operator: 'equal', value: 's' },
+            { fact: 'q1', operator: 'equal', value: 'n' },
             { fact: 'q2', operator: 'equal', value: 'null' }
         ]
     },
     event: {
         type: 'question', params: { value: 'q2' }
-    }
+    },
+    priority: 2
 }));
-*/
-engine.on('success', function (event, engine) {
+//------------------------------------------------------------------
+// Decision rules
+//------------------------------------------------------------------
+engine.addRule( new RuleEngine.Rule({
+    conditions: { 
+        all: [
+            { fact: 'q1', operator: 'equal', value: 's' }
+        ]
+    },
+    event: {
+        type: 'decision', params: { value: 'd1' }
+    },
+    priority: 1
+}));
+//------------------------------------------------------------------
+engine.addRule( new RuleEngine.Rule({
+    conditions: { 
+        all: [
+            { fact: 'q1', operator: 'equal', value: 'n' },
+            { fact: 'q2', operator: 'equal', value: 'n' }
+        ]
+    },
+    event: {
+        type: 'decision', params: { value: 'd2' }
+    },
+    priority: 1
+}));
+//------------------------------------------------------------------
+engine.addRule( new RuleEngine.Rule({
+    conditions: { 
+        all: [
+            { fact: 'q1', operator: 'equal', value: 'n' },
+            { fact: 'q2', operator: 'equal', value: 's' }
+        ]
+    },
+    event: {
+        type: 'decision', params: { value: 'd3' }
+    },
+    priority: 1
+}));
+//------------------------------------------------------------------
+
+engine.on('success', function (event, almanac) {
 
     if (event.type === 'question') {
-        console.log('vou fazer uma pergunta aqui.');
-        doQuestion(event.params.value);
+        var answer = '';
+        while (questions[event.params.value].valid_values.indexOf(answer) === -1) {
+            answer = readlineSync.question(questions[event.params.value].text);
+        }
+        almanac.addRuntimeFact(event.params.value, answer);
     }
 
-    console.log('Success event:\n', event);
+    if (event.type === 'decision') {
+        console.log('Decisão: ' + decisions[event.params.value].text);
+    }
 });
 
 var facts = {
-    q1: 'null'
+    q1: 'null',
+    q2: 'null'
 };
 
 engine
     .run(facts)
     .then(function (events) {
-        events.map(function (event) { return console.log(event.params.message); });
+        events.map(function (event) {
+            //return console.log(event);
+        });
     });
-
-
     
-function doQuestion(question) {
-
-
-}
-
-
-
-
 
 
 var questions = {
-    q1: 'pergunta 1 (s/n)?',
-    q2: 'pergunta 2 (s/n)?',
+    q1: { text: 'vai chover (s/n)?', valid_values: [ 's', 'n' ] },
+    q2: { text: 'vai fazer frio (s/n)?', valid_values: [ 's', 'n' ] }
 };
 
-console.log('sucesso!');
+var decisions = {
+    d1: { text: 'não sair de casa' },
+    d2: { text: 'sair tranquilo' },
+    d3: { text: 'levar um casaco' }
+};
+
+console.log('---------------------------------------------------------');
+console.log('Bem vindo ao sistema de apoio a decisão baseado em regras');
+console.log('---------------------------------------------------------');
